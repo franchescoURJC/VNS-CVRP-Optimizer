@@ -11,3 +11,9 @@ Use metaheuristics to create an algorithm that optimizes a CVRP.
 ## Local search & shake
 [2-opt](https://en.wikipedia.org/wiki/2-opt)
 
+# Data visualization
+## Initial solution
+![Solución_inicial_problema_2](https://github.com/user-attachments/assets/0f6c87a8-92fc-4013-8372-45b257761998)
+
+## Best solution (after 5 minutes)
+![Mejor_solución_problema_2](https://github.com/user-attachments/assets/067f0e0e-01a9-4d38-9dac-7391bfdf6950)

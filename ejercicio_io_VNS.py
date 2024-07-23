@@ -7,8 +7,6 @@ Se deben visitar con exactamente el número de vehículos indicados recorriendo 
 from math import sqrt
 import time
 import random 
-import networkx as nx
-import numpy as np
 import matplotlib.pyplot as plt
 
 def read_data(filename):
@@ -64,20 +62,17 @@ def process_data(coordinates):
     # Calculate distances
     for start_node, x1, y1 in coordinates:
         for _, x2, y2 in coordinates:
-            # NOTE: Redondeo por legibilidad 
-            distance = round(calculate_euclidean_distance(x1, y1, x2, y2), 2)
+            distance = calculate_euclidean_distance(x1, y1, x2, y2)
             distance_matrix[start_node].append(distance)
     
     """
     Clarke & Wright savings heuristic
     Savings formula: s(i, j) = d(D, i) + d(D, j) - d(i, j) 
-    """
-    
+    """ 
     # Calculate savings
     for i in range(len(distance_matrix)):
         for j in range(1, i): # Going to the deposit equals 0 in savings 
-            # NOTE: Redondeo por legibilidad 
-            saving = round(distance_matrix[0][i] + distance_matrix[0][j] - distance_matrix[i][j], 2)
+            saving = distance_matrix[0][i] + distance_matrix[0][j] - distance_matrix[i][j]
             savings.append((i, j, saving))
     
     # Order by savings descending
@@ -183,8 +178,6 @@ def init_solution(savings, demands):
                     capacities[start_node_route_index] = VEHICLE_CAPACITY - merged_route_demand
                     capacities.pop(end_node_route_index)
 
-                    print("ROUTES MERGED")
-
         if capacity_index != None:
             capacities[capacity_index] -= edge_demands
         
@@ -224,7 +217,6 @@ def local_search(tours, best_distance, distance_matrix):
                         tours = new_tours.copy()
                         best_distance = new_distance
                         better_solution_found = True
-                        print("Better solution found:", best_distance)
     return tours, best_distance
 
 
@@ -234,17 +226,20 @@ def vns(distance_matrix, savings, demands, max_k, max_time):
     # Copy for solution comparison
     init_tours = tours.copy() 
     best_distance = objective_function(tours, distance_matrix)
-    print(best_distance)
+    print("Init distance:", best_distance)
+
     if len(tours) > VEHICLES:
         raise Exception("ERROR: More routes than vehicles")
     
+    print("Demands:", end=" ")
     for route in tours:
         acc = 0
         for node in route:
             acc += demands[node]
         print(acc, end=" ")
+    print()
     
-    print("Initial solution:")
+    print("Initial tour:")
     for route in tours:
         print(route)
     
@@ -263,8 +258,11 @@ def vns(distance_matrix, savings, demands, max_k, max_time):
             if current_distance < best_distance:
                 tours = current_routes
                 best_distance = current_distance
+                print("\n#################################")
                 print("New solution found")
-                print("Distance:", best_distance, "\n")
+                print("Distance:", best_distance)
+                print("Time elapsed:", (current_time - start_time)/60, "minutes")
+                print("#################################")
                 k = 1
             else:
                 k += 1
@@ -283,7 +281,7 @@ def generate_visualization(coordinates, tour, title):
     plt.scatter(xs, ys, color="blue", marker="o")
 
     # Draw edges
-    colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet", "cyan", "black", "slategrey"]
+    colors = ["red", "orange", "gold", "green", "blue", "mediumorchid", "cyan", "black", "slategrey"]
     counter = 0
     for route in tour:
         route_edges = [(route[i], route[i + 1]) for i in range(len(route) - 1)]
@@ -305,22 +303,19 @@ def generate_visualization(coordinates, tour, title):
 # Constants
 SMALL_FILENAME = "32nodos_5Veh_100Capacidad.txt"
 LARGE_FILENAME = "65nodos_9Veh_100Capacidad.txt"
-MAX_TIME = 1 * 60 # 5 minutos
-MAX_K = 127
-VEHICLES = 9 # NOTE: Este algoritmo no utiliza exactamente como mínimo y máximo este número de vehículos. Solamente como máximo.
+MAX_TIME = 5 * 60 # 5 minutos
+MAX_K = 10
+VEHICLES = 9 # NOTE: Este algoritmo no utiliza exactamente como mínimo y máximo este número de vehículos. Solamente como máximo, es lo que interpreto del enunciado propuesto.
 VEHICLE_CAPACITY = 100
 
-coordinates, demands = read_data(SMALL_FILENAME)
-print(coordinates)
+coordinates, demands = read_data(LARGE_FILENAME)
 
 # Initial feasibility check
 total_capacity = VEHICLE_CAPACITY * VEHICLES
 if total_capacity < sum(demands):
     raise Exception("Infeasible: Not enough vehicles/capacity")
 
-
 distance_matrix, savings = process_data(coordinates)
-
 init_tour, best_tour, best_distance, time_elapsed = vns(distance_matrix, savings, demands, MAX_K, MAX_TIME)
 
 print("-------------------------------------")
